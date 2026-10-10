@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Kitchen Garden Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a "control panel" up top that mirrors the VGrow app's settings, then the plants in the box as numbered cards. */
+:root {
+  --bg: #ECF0E8;
+  --surface: #F8FAF5;
+  --ink: #17241B;
+  --muted: #56665A;
+  --line: #D0D9CB;
+  --accent: #2C6A3C;
+  --accent-ink: #F3F8F0;
+  --sun: #B97A0E;
+  --sun-soft: #F6E7C4;
+  --water: #2B6F8A;
+  --water-soft: #DCEBF0;
+  --herb: #2C6A3C;
+  --leafy: #2B7A77;
+  --fruit: #B5442C;
+  --warn: #9A5B00;
+  --warn-bg: #FBEFD7;
+  --info-bg: #E2ECDF;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1511; --surface: #172019; --ink: #E3EBE2; --muted: #9AAA9C; --line: #2A372D;
+    --accent: #7CC48E; --accent-ink: #0F1511; --sun: #F0BE55; --sun-soft: #3A3018;
+    --water: #7FC3DC; --water-soft: #16303A;
+    --herb: #7CC48E; --leafy: #6CC2BC; --fruit: #EE8068; --warn: #F0BE55; --warn-bg: #33291A; --info-bg: #1E2C22;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1511; --surface: #172019; --ink: #E3EBE2; --muted: #9AAA9C; --line: #2A372D;
+  --accent: #7CC48E; --accent-ink: #0F1511; --sun: #F0BE55; --sun-soft: #3A3018;
+  --water: #7FC3DC; --water-soft: #16303A;
+  --herb: #7CC48E; --leafy: #6CC2BC; --fruit: #EE8068; --warn: #F0BE55; --warn-bg: #33291A; --info-bg: #1E2C22;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 56px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; line-height: 1.15; }
+h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.muted { color: var(--muted); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { flex: none; }
+.seg { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.unit { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-weight: 700; }
+
+/* Today panel */
+.today { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; gap: 18px; margin-bottom: 28px; }
+.group-title { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.dial { border-radius: 12px; padding: 12px 14px; background: var(--bg); display: grid; gap: 2px; align-content: start; min-width: 0; }
+.dial.light { background: var(--sun-soft); }
+.dial.water { background: var(--water-soft); }
+.dial .big { font-family: var(--display); font-size: 1.75rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dial .sub { font-size: .88rem; color: var(--muted); }
+.dial input[type="time"] { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 1px 6px; font-family: var(--mono); font-size: .88rem; }
+.notes { display: grid; gap: 8px; }
+.note { padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); font-size: .95rem; }
+.note.info { background: var(--info-bg); }
+.note b { color: var(--warn); }
+.note.info b { color: var(--accent); }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
+.tasks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.tasks li { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; font-size: .95rem; }
+.tasks .tag { font-family: var(--mono); font-size: .75rem; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; margin-top: 2px; white-space: nowrap; }
+.feed { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.feed select { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 3px 6px; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-weight: 700; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--fruit); }
+.btn.small { padding: 5px 10px; font-size: .88rem; }
+
+.section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; }
+
+/* Plants */
+.pods { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.pod { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 10px; text-align: left; width: 100%; }
+.pod:hover { border-color: var(--muted); }
+.pod-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.slot { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 500; border: 3px solid var(--g, var(--herb)); }
+.pod-name { min-width: 0; }
+.pod-name h3 { overflow-wrap: anywhere; }
+.g-herb { --g: var(--herb); } .g-leafy { --g: var(--leafy); } .g-fruit { --g: var(--fruit); }
+.chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--g); }
+.day { margin-left: auto; text-align: right; flex: none; }
+.day .num { font-size: 1.3rem; display: block; line-height: 1; }
+.bar { position: relative; height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--g); border-radius: 4px; }
+.bar .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--surface); }
+.stage-line { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--r); padding: 28px 20px; display: grid; gap: 12px; justify-items: start; }
+.empty p { margin: 0; max-width: 60ch; }
+
+/* Library */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.search { flex: 1 1 220px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 9px 12px; min-width: 0; }
+.fchip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: .9rem; }
+.fchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; text-align: left; display: grid; gap: 8px; align-content: start; }
+.card:hover { border-color: var(--muted); }
+.card h3 { overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; }
+.facts div { display: grid; }
+.facts .num { font-size: .95rem; }
+.card.add { border-style: dashed; place-content: center; text-align: center; color: var(--muted); min-height: 140px; }
+
+/* Sheet */
+dialog { border: 0; padding: 0; border-radius: 18px; background: var(--surface); color: var(--ink); width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog::backdrop { background: rgba(10, 18, 12, .45); }
+.sheet { padding: 22px; display: grid; gap: 18px; }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.x { border: 0; background: var(--bg); width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; line-height: 1; flex: none; }
+.grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.grid-stats div { background: var(--bg); border-radius: 10px; padding: 10px 12px; display: grid; }
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.tips { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+form.f { display: grid; gap: 12px; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; }
+.field input, .field select { border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: 9px 12px; width: 100%; min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--warn-bg); padding: 10px 12px; border-radius: 10px; }
+/* Plan editor cards */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+.plan-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.plan-card h3 { font-size: .95rem; margin-bottom: 6px; }
+.plan-card dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: .9rem; }
+.plan-card dt { color: var(--muted); }
+.plan-card dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* Water log */
+.log-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; align-items: end; }
+.log-form .note-field { grid-column: span 2; }
+@media (max-width: 520px) { .log-form .note-field { grid-column: 1 / -1; } }
+.log-form .field input { padding: 8px 10px; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.chart { background: var(--bg); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pill { display: inline-block; font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; letter-spacing: .04em; }
+.pill.ok { background: var(--info-bg); color: var(--accent); }
+.pill.off { background: var(--warn-bg); color: var(--warn); }
+td .del { border: 0; background: none; color: var(--muted); padding: 2px 6px; border-radius: 6px; font-size: .85rem; }
+td .del.armed { color: var(--fruit); font-weight: 700; }
+.advice { font-size: .95rem; margin: 0; }
+footer { margin-top: 36px; font-size: .85rem; color: var(--muted); max-width: 70ch; }
+@media (prefers-reduced-motion: no-preference) { .bar .fill { transition: width .4s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="2" y="3" width="30" height="5" rx="2.5" fill="var(--sun)"/><path d="M17 31V17" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/><path d="M17 20c-5 0-8-3-8-8 5 0 8 3 8 8Z" fill="var(--accent)"/><path d="M17 17c0-4 3-6.5 7-6.5 0 4-3 6.5-7 6.5Z" fill="var(--accent)" opacity=".7"/></svg>
+      <div><h1>Kitchen Garden Planner</h1><div class="muted" style="font-size:.9rem">Veggie and herb settings for the VIVOSUN VGrow</div></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="seg" role="tablist">
+        <button role="tab" aria-selected="true" data-view="garden">My grow</button>
+        <button role="tab" aria-selected="false" data-view="plants">Plant library</button>
+      </div>
+      <button class="unit" id="unit" title="Switch temperature units">°C</button>
+    </div>
+  </header>
+
+  <main id="view-garden">
+    <section class="today" id="today"></section>
+    <section class="today" id="log"></section>
+    <div class="section-head">
+      <h2>Plants in the box</h2>
+      <button class="btn primary" id="add-pod">Add a plant</button>
+    </div>
+    <div id="pods"></div>
+  </main>
+
+  <main id="view-plants" hidden>
+    <div class="filters">
+      <input class="search" id="q" type="search" placeholder="Search: basil, chilli, lettuce…" aria-label="Search plants">
+      <button class="fchip" data-f="all" aria-pressed="true">All</button>
+      <button class="fchip" data-f="herb" aria-pressed="false">Herbs</button>
+      <button class="fchip" data-f="leafy" aria-pressed="false">Leafy greens</button>
+      <button class="fchip" data-f="fruit" aria-pressed="false">Fruiting</button>
+    </div>
+    <div class="lib" id="lib"></div>
+  </main>
+
+  <footer id="foot">Numbers are typical hydroponic ranges for a VGrow box (100 W LED, 46 × 46 cm, about 92 cm of grow height). Your nutrient's own dosing chart comes first: use it for amounts and these EC figures as a check. Enter the settings in the VIVOSUN app.</footer>
+</div>
+
+<dialog id="sheet"><div class="sheet" id="sheet-body"></div></dialog>
+
+<script>
+(() => {
+/* ---------- Plant data ---------- */
+const GROUP_NAME = { herb: "Herb", leafy: "Leafy green", fruit: "Fruiting" };
+const GROW_BRIGHT = { herb: 80, leafy: 70, fruit: 85 };
+const DEFAULT_TASKS = {
+  Sprouting: ["Keep the rapid rooter or plug moist and the dome on until sprouts appear"],
+  Seedling: ["Remove the dome once sprouted", "Thin to the strongest seedling (or 2–3 for herbs)"],
+  Growing: ["Lower the light gradually as the plant fills out", "Trim yellow or crowded leaves"],
+  Harvest: ["Harvest little and often, never more than a third at once"]
+};
+function mk(p) {
+  const s = p.sprout[1], h = p.hours, b = p.bright || GROW_BRIGHT[p.group];
+  const stages = p.stages || [
+    ["Sprouting", 0, h, 40],
+    ["Seedling", s, h, 60],
+    ["Growing", Math.min(s + 14, p.harvest - 3), h, b],
+    ["Harvest", p.harvest, h, b]
+  ];
+  return {
+    maxHours: 18, hum: [40, 65], ph: [5.8, 6.3], tips: [], tasks: {}, ...p,
+    ec: { seed: [0.4, 0.8], ...(p.ec || {}) },
+    stages: stages.map(([name, day, hours, bright, tasks]) => ({
+      name, day, hours, bright,
+      tasks: tasks || (p.tasks && p.tasks[name]) || DEFAULT_TASKS[name] || []
+    }))
+  };
+}
+const FRUIT = (sprout, seedling, growing, flowering, harvest, hours, t) => [
+  ["Sprouting", 0, hours, 40, t.sprout],
+  ["Seedling", seedling, hours, 60, t.seedling || ["Remove the dome", "Thin to one seedling"]],
+  ["Growing", growing, hours, 85, t.growing],
+  ["Flowering", flowering, hours, 100, t.flowering],
+  ["Harvest", harvest, hours, 100, t.harvest]
+];
+const PLANTS = [
+  mk({ id: "basil", name: "Genovese basil", group: "herb", sprout: [5, 10], harvest: 35, hours: 16, temp: [20, 29],
+    ph: [5.5, 6.5], ec: { grow: [1.0, 1.6] },
+    tasks: { Growing: ["Pinch the top just above the 2nd or 3rd pair of leaves", "Snip flower buds as soon as they show"],
+             Harvest: ["Cut from the top, just above a leaf pair", "Keep removing flower buds so leaves keep coming"] },
+    tips: ["Basil loves warmth. Below 15 °C it stalls and blackens.", "In DWC, basil roots grow fast. Trim them if they tangle with the air stones."] }),
+  mk({ id: "thai-basil", name: "Thai basil", group: "herb", sprout: [5, 12], harvest: 40, hours: 16, temp: [21, 30],
+    ph: [5.5, 6.5], ec: { grow: [1.0, 1.6] },
+    tasks: { Growing: ["Pinch the top above the 3rd pair of leaves", "Remove purple flower spikes to keep leaves tender"] },
+    tips: ["Slightly slower than Genovese and happier a bit warmer."] }),
+  mk({ id: "cherry-tomato", name: "Dwarf cherry tomato", group: "fruit", sprout: [5, 10], harvest: 75, hours: 18, temp: [18, 27], hum: [50, 70],
+    ec: { grow: [1.5, 2.5], fruit: [2.0, 3.5] },
+    stages: FRUIT(null, 10, 21, 45, 75, 18, {
+      growing: ["Pinch off side shoots (suckers) between stem and branches", "Tie the main stem to a stake or the tent frame", "Keep the top at least 30 cm below the light"],
+      flowering: ["Tap the stems or brush open flowers every 1–2 days to pollinate", "Leave the circulation fan running. The breeze helps pollination"],
+      harvest: ["Pick when fully colored and slightly soft", "Trim yellowing lower leaves"] }),
+    tips: ["The VGrow has about 92 cm of grow height, so choose a dwarf or bush type (Micro Tom, Red Robin, Tiny Tim). Tall vine tomatoes will hit the light.", "Tomatoes don't need short days to flower. Keep the light at 16–18 h the whole way through."] }),
+  mk({ id: "roma-tomato", name: "Roma tomato", group: "fruit", sprout: [5, 10], harvest: 100, hours: 18, temp: [18, 27], hum: [50, 70],
+    ec: { grow: [1.5, 2.5], fruit: [2.0, 3.5] },
+    stages: FRUIT(null, 10, 24, 55, 100, 18, {
+      growing: ["Pinch off side shoots (suckers) so it stays to one or two main stems", "Tie the stem to the tent frame as it grows", "Keep the top at least 30 cm below the light"],
+      flowering: ["Tap the stems or brush open flowers every 1–2 days to pollinate", "Top the plant (cut the growing tip) once it nears the light", "Keep EC and pH steady. Big swings cause blossom end rot"],
+      harvest: ["Pick when evenly red and slightly soft", "Remove leaves below the lowest fruit truss for airflow"] }),
+    tips: ["Romas grow bigger than the box's 92 cm comfortably allows. Prune to one or two stems and top it when it reaches the light.", "Romas are prone to blossom end rot (dark, sunken fruit bottoms). It comes from uneven feeding, so a steady EC and pH in the tank matters more than a strong one.", "Tomatoes don't need short days to flower. Keep the light at 16–18 h the whole way through."] }),
+  mk({ id: "chili", name: "Hot chilli", group: "fruit", sprout: [7, 21], harvest: 100, hours: 18, temp: [21, 30], hum: [50, 70],
+    ec: { grow: [1.4, 2.0], fruit: [1.8, 2.8] },
+    stages: FRUIT(null, 21, 35, 60, 100, 18, {
+      sprout: ["Keep the dome on. Chilli seeds can take up to 3 weeks", "Warmth speeds sprouting: aim for 24 °C+"],
+      growing: ["Pinch the top once it has 6–8 leaves for a bushier plant", "Use the space: one chilli can fill the whole box"],
+      flowering: ["Brush between open flowers with a soft paintbrush to pollinate", "Remove the first few flowers if the plant is still small"],
+      harvest: ["Pick green for milder heat or leave to ripen to full color", "Cut peppers off with scissors so branches don't snap"] }),
+    tips: ["Compact types like Thai, Cayenne, Jalapeño or Prairie Fire suit the VGrow.", "Chillies flower on their own under long days. Don't switch to 12 h light."] }),
+  mk({ id: "sweet-pepper", name: "Mini sweet pepper", group: "fruit", sprout: [7, 14], harvest: 90, hours: 18, temp: [20, 29], hum: [50, 70],
+    ec: { grow: [1.4, 2.0], fruit: [1.8, 2.5] },
+    stages: FRUIT(null, 14, 30, 60, 90, 18, {
+      growing: ["Stake it once fruit starts to form", "Lower the light gradually as it fills out"],
+      flowering: ["Brush between open flowers to pollinate"],
+      harvest: ["Pick when fully colored", "Cut, don't pull, to protect the branches"] }),
+    tips: ["Snacking types stay compact enough for the box."] }),
+  mk({ id: "strawberry", name: "Alpine strawberry", group: "fruit", sprout: [14, 30], harvest: 120, hours: 14, temp: [16, 24], maxHours: 16,
+    ec: { grow: [1.0, 1.4], fruit: [1.4, 1.8] },
+    stages: [
+      ["Sprouting", 0, 14, 40, ["Keep the dome on. Seeds are slow and uneven"]],
+      ["Seedling", 30, 14, 60, ["Remove the dome", "Thin to one plant per site"]],
+      ["Growing", 50, 14, 75, ["Trim runners so energy goes to flowers"]],
+      ["Flowering", 90, 14, 85, ["Brush the center of each open flower to pollinate"]],
+      ["Harvest", 120, 14, 85, ["Pick berries when deep red all over"]]
+    ],
+    tips: ["Alpine types don't need a cold winter and fruit continuously."] }),
+  mk({ id: "lettuce", name: "Leaf lettuce", group: "leafy", sprout: [2, 7], harvest: 30, hours: 16, temp: [15, 22], hum: [50, 70], maxHours: 16,
+    ph: [5.8, 6.2], ec: { grow: [0.8, 1.2] },
+    tasks: { Growing: ["Keep it cool. Warmth makes lettuce bitter"], Harvest: ["Cut outer leaves and let the center keep growing", "Resow when it starts stretching upward (bolting)"] },
+    tips: ["Loose-leaf and butterhead types do best.", "18 h of light plus warmth makes it bolt. 16 h is the safe maximum."] }),
+  mk({ id: "spinach", name: "Spinach", group: "leafy", sprout: [5, 10], harvest: 35, hours: 12, temp: [13, 21], maxHours: 14,
+    ph: [6.0, 6.5], ec: { grow: [1.8, 2.3] },
+    tasks: { Harvest: ["Pick outer leaves regularly", "Pull the plant once it starts to flower"] },
+    tips: ["Spinach bolts quickly under long days. Grow it on its own run with a short light schedule."] }),
+  mk({ id: "kale", name: "Kale", group: "leafy", sprout: [4, 7], harvest: 40, hours: 16, temp: [15, 24],
+    ph: [5.5, 6.5], ec: { grow: [1.2, 1.8] },
+    tasks: { Harvest: ["Pick the lowest, oldest leaves first", "Leave the top crown to keep growing"] },
+    tips: ["Dwarf curly or baby kale varieties fit best."] }),
+  mk({ id: "arugula", name: "Rocket (arugula)", group: "leafy", sprout: [3, 5], harvest: 25, hours: 14, temp: [13, 21], maxHours: 16,
+    ph: [6.0, 6.8], ec: { grow: [0.8, 1.2] },
+    tasks: { Harvest: ["Cut leaves at 8–10 cm", "Resow every 3–4 weeks for a steady supply"] },
+    tips: ["Gets more peppery as it matures and in warmer conditions."] }),
+  mk({ id: "bok-choy", name: "Baby bok choy", group: "leafy", sprout: [3, 7], harvest: 30, hours: 14, temp: [15, 22], maxHours: 16,
+    ph: [6.0, 7.0], ec: { grow: [1.5, 2.0] },
+    tips: ["Harvest whole at about 15 cm, or pick outer leaves."] }),
+  mk({ id: "mint", name: "Mint", group: "herb", sprout: [10, 15], harvest: 50, hours: 16, temp: [18, 26],
+    ph: [5.5, 6.5], ec: { grow: [1.4, 2.0] },
+    tasks: { Growing: ["Pinch tips to keep it bushy"], Harvest: ["Cut stems just above a leaf pair", "Trim the roots monthly so they don't choke the tank"] },
+    tips: ["Mint roots spread fast in DWC. Keep an eye on the air stones."] }),
+  mk({ id: "parsley", name: "Parsley", group: "herb", sprout: [14, 28], harvest: 70, hours: 16, temp: [16, 24],
+    ph: [5.5, 6.0], ec: { grow: [0.8, 1.8] },
+    tasks: { Harvest: ["Cut outer stems at the base", "Leave the center to keep producing"] },
+    tips: ["Soak seeds overnight before planting to speed up sprouting."] }),
+  mk({ id: "cilantro", name: "Coriander (cilantro)", group: "herb", sprout: [7, 10], harvest: 35, hours: 14, temp: [15, 24], maxHours: 14,
+    ph: [6.0, 6.7], ec: { grow: [1.2, 1.8] },
+    tasks: { Harvest: ["Cut outer stems often", "Resow every 3–4 weeks. It bolts quickly"] },
+    tips: ["Slow-bolt varieties like Calypso last much longer indoors."] }),
+  mk({ id: "dill", name: "Dill", group: "herb", sprout: [7, 14], harvest: 45, hours: 16, temp: [16, 24],
+    ph: [5.5, 6.4], ec: { grow: [1.0, 1.6] },
+    tips: ["Grows tall and feathery. Keep it to one side so it doesn't shade other plants."] }),
+  mk({ id: "chives", name: "Chives", group: "herb", sprout: [7, 14], harvest: 60, hours: 14, temp: [15, 24],
+    ph: [6.0, 6.5], ec: { grow: [1.2, 1.8] },
+    tasks: { Harvest: ["Cut 2–3 cm above the base. It regrows"] },
+    tips: ["Very forgiving, and keeps producing for many months."] }),
+  mk({ id: "thyme", name: "Thyme", group: "herb", sprout: [14, 28], harvest: 80, hours: 16, temp: [18, 26], hum: [30, 50],
+    ph: [5.5, 7.0], ec: { grow: [0.8, 1.6] },
+    tips: ["Slow to start. Likes bright light and drier air, so it suits coco better than DWC."] }),
+  mk({ id: "oregano", name: "Oregano", group: "herb", sprout: [7, 14], harvest: 60, hours: 16, temp: [18, 27],
+    ph: [6.0, 7.0], ec: { grow: [1.0, 1.6] },
+    tips: ["Flavor is strongest just before it flowers."] }),
+  mk({ id: "rosemary", name: "Rosemary", group: "herb", sprout: [14, 28], harvest: 90, hours: 16, temp: [18, 27], hum: [30, 50],
+    ph: [5.5, 6.0], ec: { grow: [1.0, 1.6] },
+    tips: ["Germination is low. Sow extra seeds and thin later.", "Hates wet roots. Grow it in coco, not DWC."] }),
+  mk({ id: "microgreens", name: "Microgreens (radish, pea)", group: "leafy", sprout: [1, 3], harvest: 10, hours: 16,
+    ec: { grow: [0.5, 1.0] },
+    stages: [
+      ["Sprouting", 0, 16, 40, ["Keep covered for the first 2–3 days"]],
+      ["Growing", 3, 16, 70, ["Keep the tray damp"]],
+      ["Harvest", 10, 16, 70, ["Cut just above the base once the first true leaves appear"]]
+    ],
+    tips: ["Grow these on a tray on the box floor. Ready in about 10 days."] })
+];
+
+/* ---------- State & storage ---------- */
+const DEFAULT_SETTINGS = { lightOn: "07:00", setup: "dwc", dwcOn: null, dwcEvery: 14, cocoOn: null, cocoEvery: 7 };
+const state = { pods: {}, custom: {}, logs: {}, settings: { ...DEFAULT_SETTINGS }, view: "garden", filter: "all", q: "" };
+let unitF = false, remote = null;
+const LS = "kgp-data-v1";
+try { unitF = (localStorage.getItem("kgp-unit") || (/^en-US/.test(navigator.language) ? "F" : "C")) === "F"; } catch (e) {}
+function loadLocal() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS) || "null");
+    if (d) { state.pods = d.pods || {}; state.custom = d.custom || {}; state.logs = d.logs || {}; state.settings = { ...DEFAULT_SETTINGS, ...(d.settings || {}) }; }
+  } catch (e) {}
+}
+function saveLocal() {
+  try { localStorage.setItem(LS, JSON.stringify({ pods: state.pods, custom: state.custom, logs: state.logs, settings: state.settings })); } catch (e) {}
+}
+async function put(id, data) {
+  if (id.startsWith("pod_")) state.pods[id] = data;
+  else if (id.startsWith("plant_")) state.custom[id] = data;
+  else if (id.startsWith("log_")) state.logs[id] = data;
+  else if (id === "settings") state.settings = { ...state.settings, ...data };
+  render();
+  if (remote) { try { await remote.col.doc(id).set(data); } catch (e) { flash("Couldn't save that change. Check your connection and try again."); } }
+  else saveLocal();
+}
+const putSettings = patch => put("settings", { ...state.settings, ...patch });
+async function del(id) {
+  delete state.pods[id]; delete state.custom[id]; delete state.logs[id];
+  render();
+  if (remote) { try { await remote.col.doc(id).delete(); } catch (e) { flash("Couldn't remove that. Try again."); } }
+  else saveLocal();
+}
+async function connect() {
+  if (!window.claude || !window.claude.use) return;
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db || !user) return;
+    const id = await user.id();
+    if (!id) return;
+    const col = db.collection("data/users/" + id);
+    remote = { col };
+    col.onSnapshot(snap => {
+      const pods = {}, custom = {}, logs = {}; let settings = null;
+      snap.docs.forEach(d => {
+        const v = d.data(); if (!v) return;
+        if (d.id.startsWith("pod_")) pods[d.id] = { ...v };
+        else if (d.id.startsWith("plant_")) custom[d.id] = { ...v };
+        else if (d.id.startsWith("log_")) logs[d.id] = { ...v };
+        else if (d.id === "settings") settings = { ...v };
+      });
+      state.pods = pods; state.custom = custom; state.logs = logs;
+      state.settings = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+      render();
+    }, () => { remote = null; loadLocal(); render(); });
+  } catch (e) { remote = null; }
+}
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const todayISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const dayNum = iso => { const [y, m, d] = iso.split("-").map(Number); const t = new Date(); return Math.floor((Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()) - Date.UTC(y, m - 1, d)) / 864e5); };
+const addDaysISO = (iso, n) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
+const fmtDate = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" }); };
+const temp = c => unitF ? Math.round(c * 9 / 5 + 32) : c;
+const tUnit = () => `°${unitF ? "F" : "C"}`;
+const tRange = r => `${temp(r[0])}–${temp(r[1])} ${tUnit()}`;
+const f1 = n => (Math.round(n * 10) / 10).toFixed(1);
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+function allPlants() {
+  const custom = Object.entries(state.custom).map(([id, c]) => mk({
+    id, name: c.name, group: c.group, sprout: [Math.max(1, c.sprout - 3), c.sprout], harvest: c.harvest, hours: c.hours,
+    temp: [18, 26], ec: { grow: [1.0, 1.8], fruit: [1.6, 2.4] }, custom: true,
+    stages: c.group === "fruit" ? FRUIT(null, c.sprout, c.sprout + 14, Math.round((c.sprout + 14 + c.harvest) / 2), c.harvest, c.hours, {}) : undefined,
+    tips: ["Your own plant. Delete and re-add it to change its numbers."]
+  }));
+  return [...PLANTS, ...custom];
+}
+const plantById = id => allPlants().find(p => p.id === id);
+function stageAt(p, day) { let s = p.stages[0]; for (const st of p.stages) if (day >= st.day) s = st; return s; }
+const nextStage = (p, day) => p.stages.find(st => st.day > day);
+function ecFor(p, st) {
+  if (st.name === "Sprouting" || st.name === "Seedling") return p.ec.seed;
+  if (p.group === "fruit" && (st.name === "Flowering" || st.name === "Harvest")) return p.ec.fruit || p.ec.grow;
+  return p.ec.grow || [1.0, 1.6];
+}
+function cocoMl(p, st) {
+  if (st.name === "Sprouting" || st.name === "Seedling") return 100;
+  if (p.group === "fruit") return st.name === "Growing" ? 1000 : 1400;
+  return st.name === "Harvest" ? 400 : 300;
+}
+const fmtTime = hhmm => addHours(hhmm, 0);
+function addHours(hhmm, h) { const [a, b] = hhmm.split(":").map(Number); const m = (a * 60 + b + h * 60) % 1440; return new Date(2000, 0, 1, Math.floor(m / 60), m % 60).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); }
+let flashT;
+function flash(msg) { const f = $("#foot"); f.dataset.orig ??= f.textContent; f.textContent = msg; clearTimeout(flashT); flashT = setTimeout(() => f.textContent = f.dataset.orig, 5000); }
+// Overlap of several [lo, hi] ranges; null when they don't overlap.
+function overlap(ranges) { const lo = Math.max(...ranges.map(r => r[0])), hi = Math.min(...ranges.map(r => r[1])); return lo <= hi ? [lo, hi] : null; }
+
+/* ---------- Today panel ---------- */
+function activePods() {
+  return Object.entries(state.pods).map(([id, pod]) => {
+    const p = plantById(pod.plant); if (!p) return null;
+    const day = dayNum(pod.sowed);
+    return { id, pod, p, day, st: stageAt(p, Math.max(day, 0)) };
+  }).filter(Boolean).sort((a, b) => (a.pod.slot || 99) - (b.pod.slot || 99));
+}
+function renderToday(list) {
+  const el = $("#today");
+  const live = list.filter(x => x.day >= 0);
+  const s = state.settings, dwc = s.setup !== "coco";
+  const has = live.length > 0;
+
+  // Light
+  const hours = has ? Math.max(...live.map(x => x.st.hours)) : 16;
+  const bright = has ? Math.max(...live.map(x => x.st.bright)) : 60;
+  const stages = new Set(live.map(x => x.st.name));
+  const height = stages.has("Flowering") || (stages.has("Harvest") && live.some(x => x.p.group === "fruit")) ? "30–40 cm"
+    : stages.has("Growing") || stages.has("Harvest") ? "35–45 cm" : "50–60 cm";
+
+  // Climate
+  const tOk = has ? overlap(live.map(x => x.p.temp)) : [20, 26];
+  const tHi = has ? Math.min(28, ...live.map(x => x.p.temp[1])) : 28;
+  const flowering = live.some(x => x.p.group === "fruit" && (x.st.name === "Flowering" || x.st.name === "Harvest"));
+  const hHi = flowering ? 60 : has ? Math.min(70, ...live.map(x => x.p.hum[1])) : 65;
+
+  // Water
+  const phR = has ? overlap(live.map(x => x.p.ph)) : [5.8, 6.2];
+  const ecRanges = live.map(x => ({ x, r: ecFor(x.p, x.st) }));
+  const ecR = has ? overlap(ecRanges.map(e => e.r)) : [0.8, 1.2];
+  let ecText, ecSub;
+  if (ecR) { ecText = `${f1(ecR[0])}–${f1(ecR[1])}`; ecSub = "mS/cm, suits every plant"; }
+  else {
+    const lowTop = Math.min(...ecRanges.map(e => e.r[1])), highBottom = Math.max(...ecRanges.map(e => e.r[0]));
+    ecText = `${f1(lowTop)}–${f1(highBottom)}`; ecSub = "mS/cm, a compromise (see note)";
+  }
+  targets.ph = phR || [5.8, 6.2];
+  targets.ec = ecR || [Math.min(...ecRanges.map(e => e.r[1])), Math.max(...ecRanges.map(e => e.r[0]))].sort((a, b) => a - b);
+  const latest = sortedLogs()[0];
+  const lastSub = (k, fallback) => latest && latest[k] != null
+    ? `Last reading ${latest[k].toFixed(1)} ${statusPill(latest[k], targets[k])}, ${ago(latest.date)}` : fallback;
+  const ml = has ? Math.min(2000, live.reduce((a, x) => a + cocoMl(x.p, x.st), 0)) : 200;
+
+  // Notes
+  const warns = [];
+  const fruitCount = live.filter(x => x.p.group === "fruit").length;
+  if (fruitCount > 1) warns.push(`<b>${fruitCount} fruiting plants</b> share a 46 × 46 cm box. The VGrow is sized for one large plant, so expect them to crowd each other and the light. One tomato or chilli plus a few herbs works better.`);
+  live.forEach(x => { if (hours > x.p.maxHours) warns.push(`<b>${esc(x.p.name)}</b> (plant ${x.pod.slot}) likes ${x.p.maxHours} h of light or less and may bolt with ${hours} h. Harvest it young.`); });
+  if (has && !tOk) warns.push(`These plants want different temperatures. Aim for about <b>${tRange([Math.min(...live.map(x => x.p.temp[1])), Math.max(...live.map(x => x.p.temp[0]))])}</b>; the cool-season greens may turn bitter.`);
+  if (has && !ecR) {
+    const lo = ecRanges.filter(e => e.r[1] < Math.max(...ecRanges.map(z => z.r[0]))).map(e => e.x.p.name);
+    warns.push(`<b>Feed strength clash.</b> ${esc([...new Set(lo)].join(", "))} want${lo.length === 1 ? "s" : ""} a weaker feed than the others. In one ${dwc ? "tank" : "feed"} you'll have to compromise. Watch for burnt leaf tips on the light feeders.`);
+  }
+  if (dwc) live.forEach(x => { if (x.p.id === "rosemary" || x.p.id === "thyme") warns.push(`<b>${esc(x.p.name)}</b> dislikes wet roots and often struggles in DWC. Keep its rooter just above the water line.`); });
+
+  const tips = [
+    `<b>Edit the stage you're on rather than moving to the next one.</b> The box only follows the settings inside the active stage; the stage name doesn't matter. VIVOSUN's stock Flowering stage drops the light to 12 h (a cannabis trigger that just slows veg down), and the Drying stage turns the light off completely.`
+  ];
+
+  // Plan editor values, in the same terms the VIVOSUN app uses.
+  const seedlingOnly = has && live.every(x => x.st.name === "Sprouting" || x.st.name === "Seedling");
+  const nightHum = Math.min(hHi + 10, 75);
+  const dfanMax = seedlingOnly ? 50 : 100;
+  const cfanSpeed = seedlingOnly ? 40 : flowering ? 80 : 60;
+  const offAt = addHours(s.lightOn, hours);
+  const planRows = [
+    ["Light", [
+      ["Lights on", `${fmtTime(s.lightOn)} at ${bright}%`],
+      ["Lights off", `${offAt} (level 0)`],
+      ["Sunrise / sunset", "10 min"],
+      ["Height", `${height} above the tops`]
+    ]],
+    ["Duct fan: Auto", [
+      ["Max temperature", `${temp(tHi)} ${tUnit()}`],
+      ["Max humidity", `${hHi}%`],
+      ["Speed", `30–${dfanMax}%`],
+      ["At lights off", `Max humidity ${nightHum}%, speed 30–100%`]
+    ]],
+    ["Circulation fan: Cycle", flowering
+      ? [["On / off", "55 min on, 5 min off"], ["Speed", `${cfanSpeed}%`], ["Why", "A steady breeze helps flowers pollinate"]]
+      : [["On / off", "55 min on, 5 min off"], ["Speed", `${cfanSpeed}%`]]],
+    ...(dwc ? [] : [["Drip: Cycle", [
+      ["Start", `1 h after lights on (${addHours(s.lightOn, 1)})`],
+      ["Target", `about ${ml} ml a day`],
+      ["Adjust", "Lengthen the run until 10–20% drains out"]
+    ]]])
+  ];
+  const planText = `VGrow plan settings for ${new Date().toLocaleDateString()}\n` + planRows.map(([g, rows]) => `${g}\n` + rows.map(([k, v]) => `  ${k}: ${v}`).join("\n")).join("\n");
+
+  // Service
+  const onKey = dwc ? "dwcOn" : "cocoOn", everyKey = dwc ? "dwcEvery" : "cocoEvery";
+  const last = s[onKey], every = s[everyKey];
+  const since = last ? dayNum(last) : null, dueIn = since == null ? null : every - since;
+  const serviceName = dwc ? "Reservoir change" : "Tank refill";
+  const serviceText = since == null ? "Not logged yet"
+    : dueIn > 0 ? `Next in ${plural(dueIn, "day")}` : dueIn === 0 ? "Due today" : `Overdue by ${plural(-dueIn, "day")}`;
+
+  const tasks = [];
+  if (since != null && dueIn <= 0) tasks.push(["Box", dwc ? "Empty the tank, rinse it and refill with fresh nutrient solution" : "Refill the tank with pH'd nutrient solution"]);
+  live.forEach(x => {
+    const tag = "Plant " + (x.pod.slot ?? "?");
+    if (x.st.name === "Sprouting" && x.day > x.p.sprout[1] + 4) tasks.push([tag, `${x.p.name} is past its usual sprouting window. If nothing has come up, resow it`]);
+    else x.st.tasks.slice(0, 2).forEach(t => tasks.push([tag, `${x.p.name}: ${t}`]));
+  });
+
+  el.innerHTML = `
+    <div class="section-head" style="margin:0">
+      <div><h2>Set your VGrow to</h2><span class="label">${new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</span></div>
+      <div class="seg" role="group" aria-label="Growing setup">
+        <button data-setup="dwc" aria-pressed="${dwc}">DWC tank</button>
+        <button data-setup="coco" aria-pressed="${!dwc}">Coco bag</button>
+      </div>
+    </div>
+    <div>
+      <div class="group-title" style="justify-content:space-between;flex-wrap:wrap">
+        <span class="label">Plan settings (VIVOSUN app → your plan → edit the active stage)</span>
+        <button class="btn small" id="copy-plan">Copy settings</button>
+      </div>
+      <div class="readout">
+        <div class="dial light"><span class="label">Light schedule</span><span class="big">${hours} h on</span>
+          <span class="sub"><label for="light-on">From</label> <input type="time" id="light-on" value="${esc(s.lightOn)}"> to ${offAt}</span></div>
+        <div class="dial light"><span class="label">Light level</span><span class="big">${bright}%</span><span class="sub">10 min sunrise and sunset</span></div>
+        <div class="dial"><span class="label">Duct fan: Auto</span><span class="big">${temp(tHi)} ${tUnit()} · ${hHi}%</span><span class="sub">Max temperature and humidity</span></div>
+        <div class="dial"><span class="label">Circulation fan</span><span class="big">55 / 5 min</span><span class="sub">Cycle at ${cfanSpeed}%</span></div>
+      </div>
+      <div class="plan-grid">${planRows.map(([g, rows]) => `<div class="plan-card"><h3>${esc(g)}</h3><dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></div>`).join("")}</div>
+    </div>
+    <div>
+      <div class="group-title"><span class="label">${dwc ? "DWC tank (15 L)" : "Coco bag (self-watering)"}</span></div>
+      <div class="readout">
+        <div class="dial water"><span class="label">pH</span><span class="big num" style="font-family:var(--display)">${phR ? `${f1(phR[0])}–${f1(phR[1])}` : "5.8–6.2"}</span><span class="sub">${lastSub("ph", dwc ? "Check every 2–3 days through the access window" : "Adjust the feed before it goes in the tank")}</span></div>
+        <div class="dial water"><span class="label">EC</span><span class="big">${ecText}</span><span class="sub">${ecSub}${latest && latest.ec != null ? `<br>${lastSub("ec", "")}` : ""}</span></div>
+        ${dwc
+          ? `<div class="dial water"><span class="label">Water temperature</span><span class="big">${tRange([18, 22])}</span><span class="sub">Above ${temp(24)} ${tUnit()} roots rot. Air stones on 24/7</span></div>`
+          : `<div class="dial water"><span class="label">Watering</span><span class="big">${ml} ml/day</span><span class="sub">Increase until 10–20% drains out</span></div>`}
+        <div class="dial"><span class="label">Room temperature</span><span class="big">${tRange(tOk || [20, 26])}</span><span class="sub">${tOk ? "Where all your plants are happy" : "No range suits everything"}</span></div>
+      </div>
+    </div>
+    <div class="notes">${warns.map(w => `<div class="note">${w}</div>`).join("")}${tips.map(t => `<div class="note info">${t}</div>`).join("")}</div>
+    <div class="split">
+      <div><h3>To do</h3>
+        ${tasks.length ? `<ul class="tasks">${tasks.map(([t, x]) => `<li><span class="tag">${esc(t)}</span><span>${esc(x)}</span></li>`).join("")}</ul>` : `<p class="muted" style="margin:8px 0 0">Nothing to do today. Add a plant to get a daily list.</p>`}
+      </div>
+      <div><h3>${serviceName}</h3>
+        <div class="feed" style="margin-top:8px">
+          <span><b>${serviceText}</b>${last ? `<br><span class="muted" style="font-size:.9rem">Last done ${fmtDate(last)}</span>` : ""}</span>
+          <button class="btn small primary" id="serviced">Done today</button>
+          <label class="muted" style="font-size:.9rem">Every <select id="service-every">${(dwc ? [7, 10, 14, 21] : [3, 5, 7, 10]).map(n => `<option value="${n}" ${n == every ? "selected" : ""}>${n} days</option>`).join("")}</select></label>
+        </div>
+        <p class="muted" style="font-size:.9rem;margin:10px 0 0">${dwc
+          ? "Between changes, top up with plain water when the level drops. Fruiting plants can drink a litre a day once they flower."
+          : "Flush the coco with plain pH'd water every 2–3 weeks to clear salt build-up."}</p>
+      </div>
+    </div>`;
+  $("#light-on").onchange = e => putSettings({ lightOn: e.target.value || "07:00" });
+  $("#copy-plan").onclick = async e => {
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(planText); b.textContent = "Copied"; }
+    catch (err) { flash("Couldn't copy here. The settings are listed under the dials."); }
+    setTimeout(() => { b.textContent = "Copy settings"; }, 2000);
+  };
+  el.querySelectorAll("[data-setup]").forEach(b => b.onclick = () => putSettings({ setup: b.dataset.setup }));
+  $("#serviced").onclick = () => putSettings({ [onKey]: todayISO() });
+  $("#service-every").onchange = e => putSettings({ [everyKey]: Number(e.target.value) });
+}
+
+/* ---------- Water log ---------- */
+const targets = { ph: [5.8, 6.2], ec: [0.8, 1.2] };
+const sortedLogs = () => Object.entries(state.logs).map(([id, l]) => ({ id, ...l }))
+  .sort((a, b) => b.date.localeCompare(a.date) || (b.at || 0) - (a.at || 0));
+function ago(iso) { const n = dayNum(iso); return n <= 0 ? "today" : n === 1 ? "yesterday" : `${n} days ago`; }
+function status(v, r) { return v < r[0] ? "Low" : v > r[1] ? "High" : "OK"; }
+function statusPill(v, r) { const s = status(v, r); return `<span class="pill ${s === "OK" ? "ok" : "off"}">${s}</span>`; }
+function advice(l) {
+  const out = [], dwc = state.settings.setup !== "coco";
+  if (l.ph != null) {
+    const s = status(l.ph, targets.ph);
+    if (s === "High") out.push(`pH is high. Add pH Down a few drops at a time, stir${dwc ? " (or let the air stones mix it)" : ""}, wait 15 minutes and re-test.${dwc ? " pH creeping up between changes is normal in DWC." : ""}`);
+    if (s === "Low") out.push("pH is low. Add pH Up a few drops at a time, mix, wait 15 minutes and re-test.");
+  }
+  if (l.ec != null) {
+    const s = status(l.ec, targets.ec);
+    if (s === "High") out.push(dwc ? "EC is high. Plants are drinking water faster than feed: top up with plain water." : "EC is high. Give plain pH'd water for a day or two, or dilute the feed.");
+    if (s === "Low") out.push(dwc ? "EC is low. Plants are hungry: add a little nutrient (a quarter of a normal dose), mix and re-test." : "EC is low. Mix the next feed a little stronger.");
+  }
+  if (l.wt != null && l.wt > 24 && dwc) out.push(`Water is ${temp(l.wt)} ${tUnit()}. Above ${temp(24)} ${tUnit()} roots can rot. Cool the room or freeze a sealed water bottle and float it in the tank.`);
+  return out;
+}
+function chartSVG(points, band, lo, hi, color) {
+  const W = 320, H = 130, L = 34, R = 10, T = 10, B = 22;
+  const t0 = points[0].t, t1 = points[points.length - 1].t, span = Math.max(1, t1 - t0);
+  const x = t => L + ((t - t0) / span) * (W - L - R);
+  const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const path = points.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  const last = points[points.length - 1];
+  const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+  const d0 = new Date(t0).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const d1 = new Date(t1).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">
+    <rect x="${L}" y="${y(band[1]).toFixed(1)}" width="${W - L - R}" height="${Math.max(1, y(band[0]) - y(band[1])).toFixed(1)}" fill="var(--info-bg)"/>
+    <line x1="${L}" x2="${W - R}" y1="${T}" y2="${T}" stroke="var(--line)"/>
+    <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="var(--line)"/>
+    <text x="${L - 6}" y="${T + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--mono)">${fmt(hi)}</text>
+    <text x="${L - 6}" y="${H - B + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--mono)">${fmt(lo)}</text>
+    <text x="${L - 6}" y="${(y(band[0]) + y(band[1])) / 2 + 4}" text-anchor="end" font-size="10" fill="var(--accent)" font-family="var(--mono)">${fmt((band[0] + band[1]) / 2)}</text>
+    <text x="${L}" y="${H - 6}" font-size="10" fill="var(--muted)">${d0}</text>
+    <text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--muted)">${d1}</text>
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    ${points.map(p => `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${p === last ? 4.5 : 2.5}" fill="${p === last ? color : "var(--surface)"}" stroke="${color}" stroke-width="1.5"/>`).join("")}
+  </svg>`;
+}
+function renderLog() {
+  const el = $("#log");
+  const logs = sortedLogs();
+  const t = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
+  const chart = (key, name, fallbackLo, fallbackHi) => {
+    const pts = logs.filter(l => l[key] != null).slice(0, 40).reverse().map(l => ({ t: t(l.date), v: l[key] }));
+    const band = targets[key];
+    if (pts.length < 2) return `<div class="chart"><div class="chart-head"><span class="label">${name}</span><span class="muted" style="font-size:.85rem">Target ${f1(band[0])}–${f1(band[1])}</span></div>
+      <p class="muted" style="margin:0;font-size:.9rem">Add ${pts.length ? "one more reading" : "two readings"} to see a trend line.</p></div>`;
+    const vals = pts.map(p => p.v);
+    const lo = Math.min(fallbackLo, band[0], ...vals), hi = Math.max(fallbackHi, band[1], ...vals);
+    const pad = (hi - lo) * 0.08;
+    const lastV = vals[vals.length - 1];
+    return `<div class="chart"><div class="chart-head"><span class="label">${name}</span><span style="font-size:.85rem"><span class="num">${lastV.toFixed(1)}</span> ${statusPill(lastV, band)}</span></div>
+      ${chartSVG(pts, band, Math.max(0, lo - pad), hi + pad, "var(--water)")}
+      <span class="muted" style="font-size:.8rem">Shaded band is today's target for your plants</span></div>`;
+  };
+  const latest = logs[0];
+  const tips = latest ? advice(latest) : [];
+  // Keep half-typed values when something else re-renders the page.
+  const keep = Object.fromEntries(["l-date", "l-ph", "l-ec", "l-wt", "l-note"].map(k => [k, el.querySelector("#" + k)?.value]));
+  el.innerHTML = `
+    <div class="section-head" style="margin:0"><div><h2>Water log</h2><span class="label">pH and EC readings</span></div>
+      ${latest ? `<span class="muted" style="font-size:.9rem">Last checked ${ago(latest.date)}</span>` : ""}</div>
+    <form class="log-form" id="log-form">
+      <div class="field"><label class="label" for="l-date">Date</label><input id="l-date" type="date" value="${todayISO()}" required></div>
+      <div class="field"><label class="label" for="l-ph">pH</label><input id="l-ph" type="number" step="0.1" min="2" max="10" inputmode="decimal" placeholder="${f1((targets.ph[0] + targets.ph[1]) / 2)}"></div>
+      <div class="field"><label class="label" for="l-ec">EC (mS/cm)</label><input id="l-ec" type="number" step="0.1" min="0" max="8" inputmode="decimal" placeholder="${f1((targets.ec[0] + targets.ec[1]) / 2)}"></div>
+      <div class="field"><label class="label" for="l-wt">Water ${tUnit()}</label><input id="l-wt" type="number" step="0.5" inputmode="decimal" placeholder="optional"></div>
+      <div class="field note-field"><label class="label" for="l-note">Note</label><input id="l-note" maxlength="80" placeholder="e.g. added 3 drops pH Down"></div>
+      <button class="btn primary">Save reading</button>
+    </form>
+    <p class="muted" style="margin:-6px 0 0;font-size:.85rem">Meter shows ppm? Divide by 500 for EC (e.g. 600 ppm = 1.2), or by 700 if it uses the 700 scale.</p>
+    ${tips.length ? `<div class="notes">${tips.map(x => `<div class="note">${esc(x)}</div>`).join("")}</div>` : latest ? `<div class="note info"><b>All good.</b> Your last reading is inside the target range.</div>` : ""}
+    <div class="charts">${chart("ph", "pH", 5.0, 7.0)}${chart("ec", "EC", 0, 2.0)}</div>
+    ${logs.length ? `<div class="tbl-wrap"><table>
+      <thead><tr><th>Date</th><th class="num">pH</th><th class="num">EC</th><th class="num">Water</th><th>Note</th><th></th></tr></thead>
+      <tbody>${logs.slice(0, 12).map(l => `<tr>
+        <td>${fmtDate(l.date)}</td>
+        <td class="num">${l.ph != null ? `${l.ph.toFixed(1)} ${statusPill(l.ph, targets.ph)}` : "–"}</td>
+        <td class="num">${l.ec != null ? `${l.ec.toFixed(1)} ${statusPill(l.ec, targets.ec)}` : "–"}</td>
+        <td class="num">${l.wt != null ? `${temp(l.wt)} ${tUnit()}` : "–"}</td>
+        <td>${esc(l.note || "")}</td>
+        <td class="num"><button class="del" data-del="${l.id}" aria-label="Delete reading from ${fmtDate(l.date)}">Delete</button></td></tr>`).join("")}</tbody>
+    </table></div>${logs.length > 12 ? `<p class="muted" style="margin:0;font-size:.85rem">Showing the latest 12 of ${logs.length} readings. The charts use up to 40.</p>` : ""}`
+    : `<p class="muted" style="margin:0">No readings yet. Test the ${state.settings.setup !== "coco" ? "tank through the access window" : "feed before it goes into the tank"} and log it here. Every 2–3 days is plenty.</p>`}`;
+
+  Object.entries(keep).forEach(([k, v]) => { if (v) $("#" + k).value = v; });
+  $("#log-form").onsubmit = async e => {
+    e.preventDefault();
+    const num = v => v === "" ? null : Number(v);
+    const ph = num($("#l-ph").value), ec = num($("#l-ec").value), wtIn = num($("#l-wt").value);
+    if (ph == null && ec == null) { flash("Enter a pH or EC reading to save."); $("#l-ph").focus(); return; }
+    if ((ph != null && (ph < 2 || ph > 10)) || (ec != null && (ec < 0 || ec > 8))) { flash("That reading looks out of range. pH is usually 4–8 and EC 0–4."); return; }
+    const wt = wtIn == null ? null : unitF ? Math.round(((wtIn - 32) * 5 / 9) * 10) / 10 : wtIn;
+    const note = $("#l-note").value.trim(), date = $("#l-date").value || todayISO();
+    ["l-ph", "l-ec", "l-wt", "l-note"].forEach(k => $("#" + k).value = "");
+    await put(uid("log_"), { date, ph, ec, wt, note, at: Date.now() });
+  };
+  el.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    if (b.classList.contains("armed")) { del(b.dataset.del); return; }
+    b.classList.add("armed"); b.textContent = "Confirm";
+    setTimeout(() => { b.classList.remove("armed"); b.textContent = "Delete"; }, 4000);
+  });
+}
+
+/* ---------- Plants in the box ---------- */
+function renderPods(list) {
+  const el = $("#pods");
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><h3>Nothing growing yet</h3>
+      <p>Add each plant and the date you sowed it. The planner works out what stage it's in, what to set the VGrow to, and what needs doing today.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="add">Add a plant</button><button class="btn" data-act="example">Load an example grow</button></div></div>`;
+    el.querySelector('[data-act="add"]').onclick = () => openPlantPicker();
+    el.querySelector('[data-act="example"]').onclick = async () => {
+      const t = todayISO();
+      for (const [slot, plant, ago] of [[1, "chili", 40], [2, "basil", 24], [3, "basil", 24], [4, "parsley", 30]])
+        await put(uid("pod_"), { slot, plant, sowed: addDaysISO(t, -ago), note: "Example" });
+    };
+    return;
+  }
+  el.innerHTML = `<div class="pods">${list.map(({ id, pod, p, day, st }) => {
+    const end = p.stages[p.stages.length - 1].day;
+    const pct = Math.max(0, Math.min(100, (day / end) * 100));
+    const nx = nextStage(p, day);
+    let next;
+    if (day < 0) next = `Sow date is in ${plural(-day, "day")}`;
+    else if (st.name === "Sprouting") next = day < p.sprout[0] ? `Sprouts expected from day ${p.sprout[0]}` : `Sprouts due by day ${p.sprout[1]}`;
+    else if (nx) next = `${nx.name} in ${plural(nx.day - day, "day")}`;
+    else next = `Harvesting for ${plural(day - end, "day")}`;
+    return `<button class="pod g-${p.group}" data-pod="${id}" aria-label="Edit plant ${pod.slot}: ${esc(p.name)}">
+      <div class="pod-top"><span class="slot">${pod.slot ?? "?"}</span>
+        <div class="pod-name"><span class="chip">${GROUP_NAME[p.group]}</span><h3>${esc(p.name)}</h3></div>
+        <div class="day"><span class="label">Day</span><span class="num">${Math.max(day, 0)}</span></div></div>
+      <div class="bar" aria-hidden="true"><span class="fill" style="width:${pct}%"></span>${p.stages.slice(1).map(s => `<span class="tick" style="left:${(s.day / end) * 100}%"></span>`).join("")}</div>
+      <div class="stage-line"><b>${day < 0 ? "Not sown yet" : st.name}</b><span class="muted">${next}</span></div>
+    </button>`;
+  }).join("")}</div>`;
+  el.querySelectorAll("[data-pod]").forEach(b => b.onclick = () => openPod(b.dataset.pod));
+}
+
+/* ---------- Library ---------- */
+function renderLib() {
+  const q = state.q.trim().toLowerCase();
+  const list = allPlants().filter(p => (state.filter === "all" || p.group === state.filter) && (!q || p.name.toLowerCase().includes(q)));
+  $("#lib").innerHTML = list.map(p => `<button class="card g-${p.group}" data-plant="${esc(p.id)}">
+      <span class="chip">${GROUP_NAME[p.group]}${p.custom ? " · yours" : ""}</span><h3>${esc(p.name)}</h3>
+      <div class="facts"><div><span class="label">Sprouts</span><span class="num">${p.sprout[0]}–${p.sprout[1]} d</span></div>
+      <div><span class="label">Harvest</span><span class="num">~${p.harvest} d</span></div>
+      <div><span class="label">Light</span><span class="num">${Math.max(...p.stages.map(s => s.hours))} h</span></div></div>
+    </button>`).join("") + `<button class="card add" id="add-custom"><span style="font-size:1.6rem;line-height:1">+</span><b>Add your own plant</b><span style="font-size:.9rem">Anything not listed here</span></button>`;
+  $("#lib").querySelectorAll("[data-plant]").forEach(b => b.onclick = () => openPlant(b.dataset.plant));
+  $("#add-custom").onclick = () => openCustom();
+}
+
+/* ---------- Sheets ---------- */
+const sheet = $("#sheet");
+function show(html, after) {
+  $("#sheet-body").innerHTML = html;
+  $("#sheet-body").querySelectorAll("[data-close]").forEach(b => b.onclick = () => sheet.close());
+  if (!sheet.open) { try { sheet.showModal(); } catch (e) { sheet.setAttribute("open", ""); } }
+  after && after();
+}
+sheet.addEventListener("click", e => { if (e.target === sheet) sheet.close(); });
+const head = (eyebrow, title) => `<div class="sheet-head"><div><span class="label">${eyebrow}</span><h2>${title}</h2></div><button class="x" data-close aria-label="Close">×</button></div>`;
+function freeSlot() { const used = new Set(Object.values(state.pods).map(p => p.slot)); let i = 1; while (used.has(i)) i++; return i; }
+function podForm(pod) {
+  return `<form class="f" onsubmit="return false"><div class="row">
+      <div class="field"><label class="label" for="f-slot">Plant number</label><input id="f-slot" type="number" min="1" max="20" value="${pod ? pod.slot : freeSlot()}" required></div>
+      <div class="field"><label class="label" for="f-sowed">Sow date</label><input id="f-sowed" type="date" value="${pod ? pod.sowed : todayISO()}" required></div>
+    </div></form>`;
+}
+function openPlant(id) {
+  const p = plantById(id); if (!p) return;
+  show(`${head(GROUP_NAME[p.group], esc(p.name))}
+    <div class="grid-stats">
+      <div><span class="label">Sprouts in</span><span class="num">${p.sprout[0]}–${p.sprout[1]} days</span></div>
+      <div><span class="label">First harvest</span><span class="num">~${p.harvest} days</span></div>
+      <div><span class="label">Air temp</span><span class="num">${tRange(p.temp)}</span></div>
+      <div><span class="label">Humidity</span><span class="num">${p.hum[0]}–${p.hum[1]}%</span></div>
+      <div><span class="label">pH</span><span class="num">${f1(p.ph[0])}–${f1(p.ph[1])}</span></div>
+    </div>
+    <div><h3 style="margin-bottom:6px">Stages</h3><div class="tbl-wrap"><table>
+      <thead><tr><th>Stage</th><th class="num">From day</th><th class="num">Light</th><th class="num">Intensity</th><th class="num">EC</th><th>What to do</th></tr></thead>
+      <tbody>${p.stages.map(s => { const e = ecFor(p, s); return `<tr><td><b>${s.name}</b></td><td class="num">${s.day}</td><td class="num">${s.hours} h</td><td class="num">${s.bright}%</td><td class="num">${f1(e[0])}–${f1(e[1])}</td><td>${s.tasks.map(esc).join("<br>")}</td></tr>`; }).join("")}</tbody>
+    </table></div></div>
+    ${p.tips.length ? `<div><h3 style="margin-bottom:6px">Tips</h3><ul class="tips">${p.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : ""}
+    <div style="border-top:1px solid var(--line);padding-top:16px;display:grid;gap:12px"><h3>Grow it</h3>${podForm()}
+      <div class="actions">${p.custom ? `<button class="btn danger" id="rm-plant">Delete this plant</button>` : ""}<button class="btn primary" id="do-plant">Add to my grow</button></div></div>`, () => {
+    $("#do-plant").onclick = async () => {
+      const slot = Number($("#f-slot").value), sowed = $("#f-sowed").value;
+      if (!slot || !sowed) return;
+      await put(uid("pod_"), { slot, plant: p.id, sowed });
+      sheet.close(); setView("garden");
+    };
+    const rm = $("#rm-plant");
+    if (rm) rm.onclick = () => {
+      rm.outerHTML = `<span class="confirm">Delete ${esc(p.name)}? Any of these in your grow will be removed too. <button class="btn small danger" id="rm-yes">Delete</button><button class="btn small" id="rm-no">Keep</button></span>`;
+      $("#rm-yes").onclick = async () => { for (const [pid, pod] of Object.entries(state.pods)) if (pod.plant === p.id) await del(pid); await del(p.id); sheet.close(); };
+      $("#rm-no").onclick = () => openPlant(id);
+    };
+  });
+}
+function openPlantPicker() {
+  show(`${head("Add a plant", "What are you growing?")}
+    ${["herb", "leafy", "fruit"].map(g => `<div><span class="label">${GROUP_NAME[g]}s</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+      ${allPlants().filter(p => p.group === g).map(p => `<button class="fchip g-${g}" data-pick="${esc(p.id)}">${esc(p.name)}</button>`).join("")}</div></div>`).join("")}
+    <div><button class="btn" id="pick-custom">Something else…</button></div>`, () => {
+    $("#sheet-body").querySelectorAll("[data-pick]").forEach(b => b.onclick = () => openPlant(b.dataset.pick));
+    $("#pick-custom").onclick = () => openCustom();
+  });
+}
+function openPod(id) {
+  const pod = state.pods[id]; const p = plantById(pod.plant);
+  const day = dayNum(pod.sowed), st = stageAt(p, Math.max(day, 0));
+  show(`${head("Plant " + pod.slot, esc(p.name))}
+    <div class="grid-stats">
+      <div><span class="label">Sown</span><span class="num">${fmtDate(pod.sowed)}</span></div>
+      <div><span class="label">Day</span><span class="num">${Math.max(day, 0)}</span></div>
+      <div><span class="label">Stage</span><span>${day < 0 ? "Not sown" : st.name}</span></div>
+      <div><span class="label">First harvest</span><span class="num">${fmtDate(addDaysISO(pod.sowed, p.harvest))}</span></div>
+    </div>
+    <div><h3 style="margin-bottom:6px">Right now</h3><ul class="tips">${st.tasks.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
+    ${podForm(pod)}
+    <div class="actions"><button class="btn" id="see-plant">Plant guide</button><button class="btn danger" id="rm-pod">Remove</button><button class="btn primary" id="save-pod">Save</button></div>`, () => {
+    $("#save-pod").onclick = async () => { await put(id, { ...pod, slot: Number($("#f-slot").value) || pod.slot, sowed: $("#f-sowed").value || pod.sowed }); sheet.close(); };
+    $("#see-plant").onclick = () => openPlant(p.id);
+    $("#rm-pod").onclick = () => {
+      $("#rm-pod").outerHTML = `<span class="confirm">Remove plant ${pod.slot}? <button class="btn small danger" id="rm-yes">Remove</button><button class="btn small" id="rm-no">Keep</button></span>`;
+      $("#rm-yes").onclick = async () => { await del(id); sheet.close(); };
+      $("#rm-no").onclick = () => openPod(id);
+    };
+  });
+}
+function openCustom() {
+  show(`${head("Add your own plant", "A plant that isn't listed")}
+    <p class="muted" style="margin:0">Use the numbers on the seed packet. You can delete it later from the plant library.</p>
+    <form class="f" id="custom-form">
+      <div class="field"><label class="label" for="c-name">Name</label><input id="c-name" required maxlength="40" placeholder="e.g. Lemon balm"></div>
+      <div class="row">
+        <div class="field"><label class="label" for="c-group">Type</label><select id="c-group"><option value="herb">Herb</option><option value="leafy">Leafy green</option><option value="fruit">Fruiting</option></select></div>
+        <div class="field"><label class="label" for="c-hours">Light hours</label><input id="c-hours" type="number" min="8" max="20" value="16" required></div>
+        <div class="field"><label class="label" for="c-sprout">Days to sprout</label><input id="c-sprout" type="number" min="1" max="60" value="10" required></div>
+        <div class="field"><label class="label" for="c-harvest">Days to harvest</label><input id="c-harvest" type="number" min="5" max="365" value="60" required></div>
+      </div>
+      <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Add plant</button></div>
+    </form>`, () => {
+    $("#custom-form").onsubmit = async e => {
+      e.preventDefault();
+      const name = $("#c-name").value.trim(); if (!name) return;
+      const sprout = Math.max(1, Number($("#c-sprout").value) || 10);
+      const harvest = Math.max(sprout + 20, Number($("#c-harvest").value) || 60);
+      const id = uid("plant_");
+      await put(id, { name, group: $("#c-group").value, hours: Math.min(20, Math.max(8, Number($("#c-hours").value) || 16)), sprout, harvest });
+      openPlant(id);
+    };
+  });
+}
+
+/* ---------- View plumbing ---------- */
+function setView(v) {
+  state.view = v;
+  $("#view-garden").hidden = v !== "garden"; $("#view-plants").hidden = v !== "plants";
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  try { localStorage.setItem("kgp-view", v); } catch (e) {}
+}
+function render() {
+  const list = activePods();
+  renderToday(list); renderLog(); renderPods(list); renderLib();
+  $("#unit").textContent = unitF ? "°F" : "°C";
+}
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+$("#add-pod").onclick = () => openPlantPicker();
+$("#unit").onclick = () => { unitF = !unitF; try { localStorage.setItem("kgp-unit", unitF ? "F" : "C"); } catch (e) {} render(); };
+$("#q").oninput = e => { state.q = e.target.value; renderLib(); };
+document.querySelectorAll(".fchip[data-f]").forEach(b => b.onclick = () => {
+  state.filter = b.dataset.f;
+  document.querySelectorAll(".fchip[data-f]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderLib();
+});
+
+loadLocal();
+try { if (localStorage.getItem("kgp-view") === "plants") setView("plants"); } catch (e) {}
+render();
+connect();
+})();
+</script>
+
+</body>
+</html>
